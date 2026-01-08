@@ -78,7 +78,7 @@ export default async function HomePage() {
           <span className="text-emerald-500">sin complicaciones</span>
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8 text-pretty">
-          Deja de usar hojas de cálculo. Obtén precios en tiempo real de Yahoo Finance, convierte monedas
+          Obtén precios en tiempo real de Yahoo Finance, convierte monedas
           automáticamente y lleva el control de todas tus operaciones en un solo lugar.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
