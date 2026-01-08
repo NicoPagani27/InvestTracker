@@ -1,6 +1,9 @@
+"use client"
+
 import { Card, CardContent } from "@/components/ui/card"
-import { formatCurrency, formatPercent } from "@/lib/utils"
+import { formatPercent } from "@/lib/utils"
 import { TrendingUp, TrendingDown, DollarSign, BarChart3, Wallet } from "lucide-react"
+import { AnimatedNumber } from "./animated-number"
 
 interface PortfolioSummaryProps {
   totalValue: number
@@ -28,7 +31,9 @@ export function PortfolioSummary({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Valor Total</p>
-              <p className="text-2xl font-bold text-foreground mt-1">{formatCurrency(totalValue, currency)}</p>
+              <p className="text-2xl font-bold text-foreground mt-1">
+                <AnimatedNumber value={totalValue} decimals={2} prefix="$" className="transition-colors" />
+              </p>
             </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-600/10">
               <DollarSign className="h-6 w-6 text-emerald-500" />
@@ -42,7 +47,9 @@ export function PortfolioSummary({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Costo Total</p>
-              <p className="text-2xl font-bold text-foreground mt-1">{formatCurrency(totalCost, currency)}</p>
+              <p className="text-2xl font-bold text-foreground mt-1">
+                <AnimatedNumber value={totalCost} decimals={2} prefix="$" className="transition-colors" />
+              </p>
             </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-600/10">
               <Wallet className="h-6 w-6 text-blue-500" />
@@ -56,8 +63,13 @@ export function PortfolioSummary({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Ganancia/Pérdida</p>
-              <p className={`text-2xl font-bold mt-1 ${isPositive ? "text-emerald-500" : "text-red-500"}`}>
-                {formatCurrency(totalGainLoss, currency)}
+              <p className={`text-2xl font-bold mt-1 transition-colors ${isPositive ? "text-emerald-500" : "text-red-500"}`}>
+                <AnimatedNumber 
+                  value={totalGainLoss} 
+                  decimals={2} 
+                  prefix="$" 
+                  className={isPositive ? "text-emerald-500" : "text-red-500"}
+                />
               </p>
               <p className={`text-sm ${isPositive ? "text-emerald-500" : "text-red-500"}`}>
                 {formatPercent(totalGainLossPercent)}
@@ -81,7 +93,9 @@ export function PortfolioSummary({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Activos</p>
-              <p className="text-2xl font-bold text-foreground mt-1">{investmentCount}</p>
+              <p className="text-2xl font-bold text-foreground mt-1">
+                <AnimatedNumber value={investmentCount} decimals={0} className="transition-colors" />
+              </p>
               <p className="text-sm text-muted-foreground">posiciones</p>
             </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-600/10">
