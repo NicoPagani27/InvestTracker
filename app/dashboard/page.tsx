@@ -153,7 +153,11 @@ export default async function DashboardPage({
     const gainLossPercent = totalCostUSD > 0 ? (gainLossUSD / totalCostUSD) * 100 : 0
 
     return {
-      ...inv,
+      id: inv.id as number,
+      symbol: inv.symbol as string,
+      name: inv.name as string,
+      currency: stockCurrency,
+      trade_date: inv.trade_date as string,
       shares,
       costPerShare,
       currentPrice,
