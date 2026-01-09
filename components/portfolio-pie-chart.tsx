@@ -61,13 +61,13 @@ export function PortfolioPieChart({ investments }: PortfolioPieChartProps) {
   return (
     <Card className="border-border/50 bg-card/50">
       <CardHeader>
-        <CardTitle className="text-foreground text-lg">Distribución de Portafolio</CardTitle>
+        <CardTitle className="text-foreground text-base sm:text-lg">Distribución de Portafolio</CardTitle>
         <p className="text-xs text-muted-foreground">Peso porcentual por activo</p>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col lg:flex-row gap-6 items-center">
           {/* Gráfico de torta */}
-          <div className="h-[500px] w-full lg:w-2/3">
+          <div className="h-[300px] sm:h-[400px] lg:h-[500px] w-full lg:w-2/3">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -76,7 +76,7 @@ export function PortfolioPieChart({ investments }: PortfolioPieChartProps) {
                   cy="50%"
                   labelLine={false}
                   label={renderLabel}
-                  outerRadius={160}
+                  outerRadius={window.innerWidth < 640 ? 100 : 160}
                   fill="#8884d8"
                   dataKey="value"
                 >
@@ -90,13 +90,13 @@ export function PortfolioPieChart({ investments }: PortfolioPieChartProps) {
           </div>
 
           {/* Lista de activos */}
-          <div className="w-full lg:w-1/3 space-y-3">
+          <div className="w-full lg:w-1/3 space-y-2 sm:space-y-3">
             <h3 className="text-sm font-semibold text-foreground mb-4">Activos</h3>
             {data.map((item, index) => (
-              <div key={index} className="flex items-center justify-between gap-3 p-3 rounded-lg bg-card/50 border border-border/30">
-                <div className="flex items-center gap-3">
+              <div key={index} className="flex items-center justify-between gap-3 p-2 sm:p-3 rounded-lg bg-card/50 border border-border/30">
+                <div className="flex items-center gap-2 sm:gap-3">
                   <div
-                    className="w-4 h-4 rounded-full flex-shrink-0"
+                    className="w-3 h-3 sm:w-4 sm:h-4 rounded-full flex-shrink-0"
                     style={{ backgroundColor: COLORS[index % COLORS.length] }}
                   />
                   <span className="text-sm font-medium text-foreground">{item.name}</span>

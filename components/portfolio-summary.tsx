@@ -25,45 +25,45 @@ export function PortfolioSummary({
   const isPositive = totalGainLoss >= 0
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
       <Card className="border-border/50 bg-card/50">
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Valor Total</p>
-              <p className="text-2xl font-bold text-foreground mt-1">
+              <p className="text-xl sm:text-2xl font-bold text-foreground mt-1">
                 <AnimatedNumber value={totalValue} decimals={2} prefix="$" className="transition-colors" />
               </p>
             </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-600/10">
-              <DollarSign className="h-6 w-6 text-emerald-500" />
+            <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-emerald-600/10">
+              <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-500" />
             </div>
           </div>
         </CardContent>
       </Card>
 
       <Card className="border-border/50 bg-card/50">
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Costo Total</p>
-              <p className="text-2xl font-bold text-foreground mt-1">
+              <p className="text-xl sm:text-2xl font-bold text-foreground mt-1">
                 <AnimatedNumber value={totalCost} decimals={2} prefix="$" className="transition-colors" />
               </p>
             </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-600/10">
-              <Wallet className="h-6 w-6 text-blue-500" />
+            <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-blue-600/10">
+              <Wallet className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
             </div>
           </div>
         </CardContent>
       </Card>
 
       <Card className="border-border/50 bg-card/50">
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Ganancia/Pérdida</p>
-              <p className={`text-2xl font-bold mt-1 transition-colors ${isPositive ? "text-emerald-500" : "text-red-500"}`}>
+              <p className={`text-xl sm:text-2xl font-bold mt-1 transition-colors ${isPositive ? "text-emerald-500" : "text-red-500"}`}>
                 <AnimatedNumber 
                   value={totalGainLoss} 
                   decimals={2} 
@@ -76,12 +76,12 @@ export function PortfolioSummary({
               </p>
             </div>
             <div
-              className={`flex h-12 w-12 items-center justify-center rounded-full ${isPositive ? "bg-emerald-600/10" : "bg-red-600/10"}`}
+              className={`flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full ${isPositive ? "bg-emerald-600/10" : "bg-red-600/10"}`}
             >
               {isPositive ? (
-                <TrendingUp className="h-6 w-6 text-emerald-500" />
+                <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-500" />
               ) : (
-                <TrendingDown className="h-6 w-6 text-red-500" />
+                <TrendingDown className="h-5 w-5 sm:h-6 sm:w-6 text-red-500" />
               )}
             </div>
           </div>
@@ -89,17 +89,17 @@ export function PortfolioSummary({
       </Card>
 
       <Card className="border-border/50 bg-card/50">
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Activos</p>
-              <p className="text-2xl font-bold text-foreground mt-1">
+              <p className="text-xl sm:text-2xl font-bold text-foreground mt-1">
                 <AnimatedNumber value={investmentCount} decimals={0} className="transition-colors" />
               </p>
               <p className="text-sm text-muted-foreground">posiciones</p>
             </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-600/10">
-              <BarChart3 className="h-6 w-6 text-amber-500" />
+            <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-amber-600/10">
+              <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-amber-500" />
             </div>
           </div>
         </CardContent>

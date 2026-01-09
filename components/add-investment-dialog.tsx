@@ -87,9 +87,10 @@ export function AddInvestmentDialog({ watchlistId, exchangeRates, preferredCurre
       }}
     >
       <DialogTrigger asChild>
-        <Button className="bg-emerald-600 hover:bg-emerald-700">
+        <Button className="bg-emerald-600 hover:bg-emerald-700 w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
-          Agregar Inversión
+          <span className="hidden sm:inline">Agregar Inversión</span>
+          <span className="sm:hidden">Agregar</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg">

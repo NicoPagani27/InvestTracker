@@ -25,14 +25,14 @@ export function StaticInvestmentsTable({ investments, totalCost }: StaticInvestm
   return (
     <Card className="border-border/50 bg-card/50">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0">
           <div>
-            <CardTitle className="text-foreground text-lg">Información Pasada</CardTitle>
+            <CardTitle className="text-foreground text-base sm:text-lg">Información Pasada</CardTitle>
             <p className="text-xs text-muted-foreground">Datos fijos de tus inversiones al momento de compra</p>
           </div>
-          <div className="text-right">
+          <div className="text-left sm:text-right">
             <p className="text-xs text-muted-foreground">Total Cost</p>
-            <p className="text-2xl font-bold text-foreground">${formatNumber(totalCost, 2)}</p>
+            <p className="text-xl sm:text-2xl font-bold text-foreground">${formatNumber(totalCost, 2)}</p>
           </div>
         </div>
       </CardHeader>
@@ -42,20 +42,22 @@ export function StaticInvestmentsTable({ investments, totalCost }: StaticInvestm
             <p>No tienes inversiones en este portafolio.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-border/50 bg-emerald-600/20">
-                  <TableHead className="text-foreground font-semibold">Symbol</TableHead>
-                  <TableHead className="text-foreground font-semibold">Currency</TableHead>
-                  <TableHead className="text-foreground font-semibold">Trade Date</TableHead>
-                  <TableHead className="text-right text-foreground font-semibold">Shares</TableHead>
-                  <TableHead className="text-right text-foreground font-semibold">Cost/Share</TableHead>
-                  <TableHead className="text-right text-foreground font-semibold">Tipo Cambio Prom</TableHead>
-                  <TableHead className="text-right text-foreground font-semibold">TotalCost (USD)</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+          <>
+            {/* Vista de tabla para desktop */}
+            <div className="hidden md:block overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-border/50 bg-emerald-600/20">
+                    <TableHead className="text-foreground font-semibold">Symbol</TableHead>
+                    <TableHead className="text-foreground font-semibold">Currency</TableHead>
+                    <TableHead className="text-foreground font-semibold">Trade Date</TableHead>
+                    <TableHead className="text-right text-foreground font-semibold">Shares</TableHead>
+                    <TableHead className="text-right text-foreground font-semibold">Cost/Share</TableHead>
+                    <TableHead className="text-right text-foreground font-semibold">Tipo Cambio Prom</TableHead>
+                    <TableHead className="text-right text-foreground font-semibold">TotalCost (USD)</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                 {investments.map((inv) => (
                   <TableRow key={inv.id} className="border-border/50">
                     <TableCell>
@@ -85,6 +87,53 @@ export function StaticInvestmentsTable({ investments, totalCost }: StaticInvestm
               </TableBody>
             </Table>
           </div>
+
+          {/* Vista de cards para móvil */}
+          <div className="md:hidden space-y-3">
+            {investments.map((inv) => (
+              <div key={inv.id} className="border border-border/50 rounded-lg p-4 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <a
+                      href={`https://finance.yahoo.com/quote/${inv.symbol}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-400 hover:text-blue-300 hover:underline font-semibold text-lg"
+                    >
+                      {inv.symbol}
+                    </a>
+                    <p className="text-xs text-muted-foreground mt-1">{inv.name}</p>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{inv.currency}</span>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-muted-foreground text-xs">Trade Date</p>
+                    <p className="font-medium text-foreground">{formatDate(inv.trade_date)}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Shares</p>
+                    <p className="font-medium text-foreground">{formatNumber(inv.shares, 0)}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Cost/Share</p>
+                    <p className="font-medium text-foreground">{formatNumber(inv.costPerShare, 4)}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Tipo Cambio</p>
+                    <p className="font-medium text-foreground">{formatNumber(inv.exchangeRateAtPurchase, 2)}</p>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-border/30">
+                  <p className="text-xs text-muted-foreground">Total Cost (USD)</p>
+                  <p className="font-semibold text-lg text-foreground">{formatNumber(inv.totalCost, 2)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
         )}
       </CardContent>
     </Card>

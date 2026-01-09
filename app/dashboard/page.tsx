@@ -189,10 +189,12 @@ export default async function DashboardPage({
     <div className="min-h-screen bg-background">
       <DashboardHeader user={user} />
 
-      <main className="container mx-auto px-4 py-6 space-y-6">
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 items-stretch sm:items-center justify-between">
           <WatchlistSelector watchlists={watchlists as any[]} selectedId={selectedWatchlistId} />
-          {addInvestmentButton}
+          <div className="w-full sm:w-auto">
+            {addInvestmentButton}
+          </div>
         </div>
 
         {investments.length === 0 ? (

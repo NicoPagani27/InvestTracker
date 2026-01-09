@@ -65,18 +65,18 @@ export function LiveInvestmentsTable({
   return (
     <>
       <Card className="border-border/50 bg-card/50">
-        <CardHeader className="flex flex-row items-center justify-between pb-3">
-          <div className="flex items-center gap-8">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 space-y-3 sm:space-y-0">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8">
             <div>
-              <CardTitle className="text-foreground text-lg">Información Actual</CardTitle>
+              <CardTitle className="text-foreground text-base sm:text-lg">Información Actual</CardTitle>
               <p className="text-xs text-muted-foreground">
                 Datos en tiempo real desde Yahoo Finance
                 {lastUpdated && ` • Actualizado: ${lastUpdated}`}
               </p>
             </div>
-            <div className="text-right">
+            <div className="text-left sm:text-right">
               <p className="text-xs text-muted-foreground">Total Market Value</p>
-              <p className="text-2xl font-bold text-foreground">${formatNumber(totalMarketValue, 2)}</p>
+              <p className="text-xl sm:text-2xl font-bold text-foreground">${formatNumber(totalMarketValue, 2)}</p>
             </div>
           </div>
           <Button
@@ -84,10 +84,11 @@ export function LiveInvestmentsTable({
             size="sm"
             onClick={handleRefresh}
             disabled={isPending}
-            className="bg-emerald-600/20 hover:bg-emerald-600/30 border-emerald-600/50 text-emerald-400"
+            className="bg-emerald-600/20 hover:bg-emerald-600/30 border-emerald-600/50 text-emerald-400 w-full sm:w-auto"
           >
             {isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-            Actualizar Precios
+            <span className="hidden sm:inline">Actualizar Precios</span>
+            <span className="sm:hidden">Actualizar</span>
           </Button>
         </CardHeader>
         <CardContent>
@@ -96,23 +97,25 @@ export function LiveInvestmentsTable({
               <p>No tienes inversiones.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-border/50 bg-emerald-600/20">
-                    <TableHead className="text-foreground font-semibold">Symbol</TableHead>
-                    <TableHead className="text-right text-foreground font-semibold">Price</TableHead>
-                    <TableHead className="text-right text-foreground font-semibold">TC Actual</TableHead>
-                    <TableHead className="text-right text-foreground font-semibold">MarketValue</TableHead>
-                    <TableHead className="text-right text-foreground font-semibold">Ganancia/Pérdida (USD)</TableHead>
-                    <TableHead className="text-right text-foreground font-semibold">Ganancia/Pérdida (%)</TableHead>
-                    <TableHead className="text-right text-foreground font-semibold">
-                      Peso Porcentual
-                    </TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+            <>
+              {/* Vista de tabla para desktop */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-border/50 bg-emerald-600/20">
+                      <TableHead className="text-foreground font-semibold">Symbol</TableHead>
+                      <TableHead className="text-right text-foreground font-semibold">Price</TableHead>
+                      <TableHead className="text-right text-foreground font-semibold">TC Actual</TableHead>
+                      <TableHead className="text-right text-foreground font-semibold">MarketValue</TableHead>
+                      <TableHead className="text-right text-foreground font-semibold">Ganancia/Pérdida (USD)</TableHead>
+                      <TableHead className="text-right text-foreground font-semibold">Ganancia/Pérdida (%)</TableHead>
+                      <TableHead className="text-right text-foreground font-semibold">
+                        Peso Porcentual
+                      </TableHead>
+                      <TableHead></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                   {investments.map((inv) => {
                     const isPositive = inv.gainLoss >= 0
 
@@ -169,6 +172,71 @@ export function LiveInvestmentsTable({
                 </TableBody>
               </Table>
             </div>
+
+            {/* Vista de cards para móvil */}
+            <div className="md:hidden space-y-3">
+              {investments.map((inv) => {
+                const isPositive = inv.gainLoss >= 0
+                return (
+                  <div key={inv.id} className="border border-border/50 rounded-lg p-4 space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="font-semibold text-foreground text-lg">{inv.symbol}</h3>
+                        <p className="text-xs text-muted-foreground">{inv.name}</p>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setSellInvestment(inv)}>
+                            <TrendingDown className="h-4 w-4 mr-2" />
+                            Registrar Venta
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDelete(inv.id)}
+                            className="text-red-500 focus:text-red-500"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Eliminar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-muted-foreground text-xs">Price</p>
+                        <p className="font-medium text-foreground">{formatNumber(inv.currentPrice, 2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-xs">TC Actual</p>
+                        <p className="font-medium text-blue-400">{formatNumber(inv.currentExchangeRate, 2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-xs">Market Value</p>
+                        <p className="font-medium text-blue-400">{formatNumber(inv.marketValue, 2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-xs">Peso %</p>
+                        <p className="font-medium text-foreground">{formatNumber(inv.portfolioWeight, 0)}%</p>
+                      </div>
+                    </div>
+
+                    <div className={`pt-2 border-t border-border/30 ${isPositive ? "text-emerald-400" : "text-red-400"}`}>
+                      <p className="text-xs text-muted-foreground">Ganancia/Pérdida</p>
+                      <div className="flex items-baseline justify-between">
+                        <p className="font-semibold text-lg">{formatNumber(inv.gainLoss, 2)}</p>
+                        <p className="font-medium">{formatPercent(inv.gainLossPercent)}</p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </>
           )}
         </CardContent>
       </Card>
