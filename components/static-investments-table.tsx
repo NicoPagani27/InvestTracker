@@ -1,8 +1,15 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { EditInvestmentDialog } from "@/components/edit-investment-dialog"
+import { deleteInvestment } from "@/app/actions/investments"
+import { toast } from "@/hooks/use-toast"
 import { formatNumber, formatDate } from "@/lib/utils"
+import { Pencil, Trash2 } from "lucide-react"
 
 interface Investment {
   id: number
@@ -22,6 +29,28 @@ interface StaticInvestmentsTableProps {
 }
 
 export function StaticInvestmentsTable({ investments, totalCost }: StaticInvestmentsTableProps) {
+  const [editingInvestment, setEditingInvestment] = useState<Investment | null>(null)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
+
+  async function handleDelete(id: number) {
+    const result = await deleteInvestment(id)
+    
+    if (result.error) {
+      toast({
+        title: "Error",
+        description: result.error,
+        variant: "destructive",
+      })
+    } else {
+      toast({
+        title: "Éxito",
+        description: "Inversión eliminada correctamente",
+      })
+    }
+    
+    setDeletingId(null)
+  }
+
   return (
     <Card className="border-border/50 bg-card/50">
       <CardHeader className="pb-3">
@@ -55,6 +84,7 @@ export function StaticInvestmentsTable({ investments, totalCost }: StaticInvestm
                     <TableHead className="text-right text-foreground font-semibold">Cost/Share</TableHead>
                     <TableHead className="text-right text-foreground font-semibold">Tipo Cambio Prom</TableHead>
                     <TableHead className="text-right text-foreground font-semibold">TotalCost (USD)</TableHead>
+                    <TableHead className="text-center text-foreground font-semibold">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -81,6 +111,26 @@ export function StaticInvestmentsTable({ investments, totalCost }: StaticInvestm
                     </TableCell>
                     <TableCell className="text-right text-foreground font-medium">
                       {formatNumber(inv.totalCost, 2)}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-blue-500 hover:text-blue-400 hover:bg-blue-500/10"
+                          onClick={() => setEditingInvestment(inv)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                          onClick={() => setDeletingId(inv.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -130,12 +180,60 @@ export function StaticInvestmentsTable({ investments, totalCost }: StaticInvestm
                   <p className="text-xs text-muted-foreground">Total Cost (USD)</p>
                   <p className="font-semibold text-lg text-foreground">{formatNumber(inv.totalCost, 2)}</p>
                 </div>
+
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 text-blue-500 hover:text-blue-400 hover:bg-blue-500/10 border-blue-500/50"
+                    onClick={() => setEditingInvestment(inv)}
+                  >
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Editar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 text-red-500 hover:text-red-400 hover:bg-red-500/10 border-red-500/50"
+                    onClick={() => setDeletingId(inv.id)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Eliminar
+                  </Button>
+                </div>
               </div>
             ))}
+          </div>
           </div>
         </>
         )}
       </CardContent>
+
+      <EditInvestmentDialog
+        investment={editingInvestment}
+        open={!!editingInvestment}
+        onOpenChange={(open) => !open && setEditingInvestment(null)}
+      />
+
+      <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Se eliminará permanentemente esta inversión de tu portafolio.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deletingId && handleDelete(deletingId)}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   )
 }

@@ -44,6 +44,43 @@ export async function addInvestment(formData: FormData) {
   return { success: true }
 }
 
+export async function updateInvestment(formData: FormData) {
+  const user = await getSession()
+  if (!user) {
+    return { error: "No autenticado" }
+  }
+
+  const investmentId = Number.parseInt(formData.get("investmentId") as string)
+  const shares = Number.parseFloat(formData.get("shares") as string)
+  const costPerShare = Number.parseFloat(formData.get("costPerShare") as string)
+  const tradeDate = formData.get("tradeDate") as string
+  const exchangeRate = Number.parseFloat(formData.get("exchangeRate") as string) || 1
+
+  // Verify ownership
+  const investment = await sql`
+    SELECT i.* FROM investments i
+    INNER JOIN watchlists w ON w.id = i.watchlist_id
+    WHERE i.id = ${investmentId} AND w.user_id = ${user.id}
+  `
+
+  if (investment.length === 0) {
+    return { error: "Inversión no encontrada" }
+  }
+
+  await sql`
+    UPDATE investments 
+    SET shares = ${shares}, 
+        cost_per_share = ${costPerShare}, 
+        trade_date = ${tradeDate},
+        exchange_rate_at_purchase = ${exchangeRate},
+        updated_at = NOW()
+    WHERE id = ${investmentId}
+  `
+
+  revalidatePath("/dashboard")
+  return { success: true }
+}
+
 export async function deleteInvestment(investmentId: number) {
   const user = await getSession()
   if (!user) {
