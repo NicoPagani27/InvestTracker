@@ -204,7 +204,6 @@ export function StaticInvestmentsTable({ investments, totalCost }: StaticInvestm
               </div>
             ))}
           </div>
-          </div>
         </>
         )}
       </CardContent>
