@@ -28,11 +28,46 @@ export async function addInvestment(formData: FormData) {
   // Cache the stock price
   await cacheStockPrice(quote)
 
-  // Add investment
-  await sql`
-    INSERT INTO investments (watchlist_id, symbol, name, currency, shares, cost_per_share, exchange_rate_at_purchase, trade_date, notes)
-    VALUES (${watchlistId}, ${symbol}, ${quote.name}, ${quote.currency}, ${shares}, ${costPerShare}, ${exchangeRate}, ${tradeDate}, ${notes || null})
+  // Check if investment already exists in this watchlist
+  const existingInvestment = await sql`
+    SELECT * FROM investments 
+    WHERE watchlist_id = ${watchlistId} AND symbol = ${symbol}
+    LIMIT 1
   `
+
+  if (existingInvestment.length > 0) {
+    // Investment exists, update shares and recalculate weighted average cost
+    const existing = existingInvestment[0]
+    const existingShares = Number(existing.shares)
+    const existingCost = Number(existing.cost_per_share)
+    const existingRate = Number(existing.exchange_rate_at_purchase)
+    
+    const totalShares = existingShares + shares
+    
+    // Calculate weighted average cost per share
+    const totalCostInCurrency = (existingShares * existingCost) + (shares * costPerShare)
+    const avgCostPerShare = totalCostInCurrency / totalShares
+    
+    // Calculate weighted average exchange rate
+    const totalValue1 = existingShares * existingCost * existingRate
+    const totalValue2 = shares * costPerShare * exchangeRate
+    const avgExchangeRate = (totalValue1 + totalValue2) / totalCostInCurrency
+    
+    await sql`
+      UPDATE investments 
+      SET shares = ${totalShares}, 
+          cost_per_share = ${avgCostPerShare},
+          exchange_rate_at_purchase = ${avgExchangeRate},
+          updated_at = NOW()
+      WHERE id = ${existing.id}
+    `
+  } else {
+    // New investment, insert it
+    await sql`
+      INSERT INTO investments (watchlist_id, symbol, name, currency, shares, cost_per_share, exchange_rate_at_purchase, trade_date, notes)
+      VALUES (${watchlistId}, ${symbol}, ${quote.name}, ${quote.currency}, ${shares}, ${costPerShare}, ${exchangeRate}, ${tradeDate}, ${notes || null})
+    `
+  }
 
   // Record trade
   await sql`

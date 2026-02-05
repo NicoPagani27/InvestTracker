@@ -5,11 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
-import { EditInvestmentDialog } from "@/components/edit-investment-dialog"
 import { deleteInvestment } from "@/app/actions/investments"
 import { toast } from "@/hooks/use-toast"
 import { formatNumber, formatDate } from "@/lib/utils"
-import { Pencil, Trash2 } from "lucide-react"
+import { Trash2 } from "lucide-react"
 
 interface Investment {
   id: number
@@ -29,7 +28,6 @@ interface StaticInvestmentsTableProps {
 }
 
 export function StaticInvestmentsTable({ investments, totalCost }: StaticInvestmentsTableProps) {
-  const [editingInvestment, setEditingInvestment] = useState<Investment | null>(null)
   const [deletingId, setDeletingId] = useState<number | null>(null)
 
   async function handleDelete(id: number) {
@@ -84,7 +82,7 @@ export function StaticInvestmentsTable({ investments, totalCost }: StaticInvestm
                     <TableHead className="text-right text-foreground font-semibold">Cost/Share</TableHead>
                     <TableHead className="text-right text-foreground font-semibold">Tipo Cambio Prom</TableHead>
                     <TableHead className="text-right text-foreground font-semibold">TotalCost (USD)</TableHead>
-                    <TableHead className="text-center text-foreground font-semibold">Acciones</TableHead>
+                    <TableHead className="text-center text-foreground font-semibold">Acción</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -113,15 +111,7 @@ export function StaticInvestmentsTable({ investments, totalCost }: StaticInvestm
                       {formatNumber(inv.totalCost, 2)}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center justify-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-blue-500 hover:text-blue-400 hover:bg-blue-500/10"
-                          onClick={() => setEditingInvestment(inv)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
+                      <div className="flex items-center justify-center">
                         <Button
                           variant="ghost"
                           size="icon"
@@ -185,16 +175,7 @@ export function StaticInvestmentsTable({ investments, totalCost }: StaticInvestm
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex-1 text-blue-500 hover:text-blue-400 hover:bg-blue-500/10 border-blue-500/50"
-                    onClick={() => setEditingInvestment(inv)}
-                  >
-                    <Pencil className="h-4 w-4 mr-2" />
-                    Editar
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 text-red-500 hover:text-red-400 hover:bg-red-500/10 border-red-500/50"
+                    className="w-full text-red-500 hover:text-red-400 hover:bg-red-500/10 border-red-500/50"
                     onClick={() => setDeletingId(inv.id)}
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
@@ -207,12 +188,6 @@ export function StaticInvestmentsTable({ investments, totalCost }: StaticInvestm
         </>
         )}
       </CardContent>
-
-      <EditInvestmentDialog
-        investment={editingInvestment}
-        open={!!editingInvestment}
-        onOpenChange={(open) => !open && setEditingInvestment(null)}
-      />
 
       <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
         <AlertDialogContent>
