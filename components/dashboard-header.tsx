@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTheme } from "next-themes"
 import { logoutUser } from "@/app/actions/auth"
 import { Button } from "@/components/ui/button"
 import {
@@ -11,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { TrendingUp, User, LogOut, Settings, Home } from "lucide-react"
+import { TrendingUp, User, LogOut, Settings, Home, Sun, Moon } from "lucide-react"
 import type { User as UserType } from "@/lib/db"
 import Link from "next/link"
 
@@ -21,6 +22,7 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ user }: DashboardHeaderProps) {
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const { theme, setTheme } = useTheme()
 
   async function handleLogout() {
     setIsLoggingOut(true)
@@ -37,7 +39,22 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
           <span className="font-semibold text-base sm:text-lg text-foreground">InvestTracker</span>
         </Link>
 
-        <DropdownMenu>
+        <div className="flex items-center gap-1 sm:gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="h-9 w-9"
+            aria-label="Cambiar tema"
+          >
+            {theme === "dark" ? (
+              <Sun className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <Moon className="h-4 w-4 text-muted-foreground" />
+            )}
+          </Button>
+
+          <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="flex items-center gap-2 h-9 px-2 sm:px-4">
               <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-emerald-600/10">
@@ -76,7 +93,8 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
               {isLoggingOut ? "Cerrando sesión..." : "Cerrar Sesión"}
             </DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
+          </DropdownMenu>
+        </div>
       </div>
     </header>
   )
