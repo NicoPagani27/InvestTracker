@@ -5,10 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { formatNumber, formatPercent } from "@/lib/utils"
 import { updatePrices, deleteInvestment } from "@/app/actions/investments"
 import { SellDialog } from "@/components/sell-dialog"
 import { RefreshCw, MoreHorizontal, Trash2, TrendingDown, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
 interface Investment {
   id: number
@@ -46,19 +48,29 @@ export function LiveInvestmentsTable({
   const [isPending, startTransition] = useTransition()
   const [lastUpdated, setLastUpdated] = useState<string | null>(null)
   const [sellInvestment, setSellInvestment] = useState<Investment | null>(null)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
 
   function handleRefresh() {
     startTransition(async () => {
       const result = await updatePrices(watchlistId)
       if (result.updatedAt) {
         setLastUpdated(new Date(result.updatedAt).toLocaleTimeString())
+        toast.success("Precios actualizados correctamente")
+      } else if (result.error) {
+        toast.error(result.error)
       }
     })
   }
 
   async function handleDelete(id: number) {
     startTransition(async () => {
-      await deleteInvestment(id)
+      const result = await deleteInvestment(id)
+      if (result?.error) {
+        toast.error(result.error)
+      } else {
+        toast.success("Inversión eliminada")
+      }
+      setDeletingId(null)
     })
   }
 
@@ -157,7 +169,7 @@ export function LiveInvestmentsTable({
                                 Registrar Venta
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={() => handleDelete(inv.id)}
+                                onClick={() => setDeletingId(inv.id)}
                                 className="text-red-500 focus:text-red-500"
                               >
                                 <Trash2 className="h-4 w-4 mr-2" />
@@ -196,7 +208,7 @@ export function LiveInvestmentsTable({
                             Registrar Venta
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => handleDelete(inv.id)}
+                            onClick={() => setDeletingId(inv.id)}
                             className="text-red-500 focus:text-red-500"
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
@@ -249,6 +261,26 @@ export function LiveInvestmentsTable({
           onClose={() => setSellInvestment(null)}
         />
       )}
+
+      <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar inversión?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Se eliminará permanentemente esta inversión de tu portafolio.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deletingId && handleDelete(deletingId)}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }

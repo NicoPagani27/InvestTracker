@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { updateInvestment } from "@/app/actions/investments"
-import { toast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
 
 interface Investment {
@@ -44,16 +44,9 @@ export function EditInvestmentDialog({ investment, open, onOpenChange }: EditInv
     const result = await updateInvestment(formData)
 
     if (result.error) {
-      toast({
-        title: "Error",
-        description: result.error,
-        variant: "destructive",
-      })
+      toast.error(result.error)
     } else {
-      toast({
-        title: "Éxito",
-        description: "Inversión actualizada correctamente",
-      })
+      toast.success("Inversión actualizada correctamente")
       onOpenChange(false)
     }
 

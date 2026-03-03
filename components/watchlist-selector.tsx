@@ -13,11 +13,22 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { createWatchlist, deleteWatchlist } from "@/app/actions/investments"
 import { Plus, Trash2, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
 interface WatchlistSelectorProps {
   watchlists: Array<{
@@ -33,6 +44,7 @@ export function WatchlistSelector({ watchlists, selectedId }: WatchlistSelectorP
   const [isOpen, setIsOpen] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   function handleChange(value: string) {
     router.push(`/dashboard?watchlist=${value}`)
@@ -40,17 +52,28 @@ export function WatchlistSelector({ watchlists, selectedId }: WatchlistSelectorP
 
   async function handleCreate(formData: FormData) {
     setIsCreating(true)
-    await createWatchlist(formData)
+    const result = await createWatchlist(formData)
     setIsCreating(false)
-    setIsOpen(false)
+    if (result?.error) {
+      toast.error(result.error)
+    } else {
+      toast.success("Portafolio creado correctamente")
+      setIsOpen(false)
+    }
   }
 
   async function handleDelete() {
     if (watchlists.length <= 1) return
     setIsDeleting(true)
-    await deleteWatchlist(selectedId)
+    const result = await deleteWatchlist(selectedId)
     setIsDeleting(false)
-    router.push("/dashboard")
+    setConfirmDelete(false)
+    if (result?.error) {
+      toast.error(result.error)
+    } else {
+      toast.success("Portafolio eliminado")
+      router.push("/dashboard")
+    }
   }
 
   return (
@@ -103,12 +126,29 @@ export function WatchlistSelector({ watchlists, selectedId }: WatchlistSelectorP
           variant="outline"
           size="icon"
           className="bg-card/50 text-red-500 hover:text-red-600"
-          onClick={handleDelete}
+          onClick={() => setConfirmDelete(true)}
           disabled={isDeleting}
         >
           {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
         </Button>
       )}
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar portafolio?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se eliminarán también todas las inversiones dentro de este portafolio. Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

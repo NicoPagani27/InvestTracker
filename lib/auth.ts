@@ -49,6 +49,12 @@ export async function getSession(): Promise<User | null> {
 
   if (result.length === 0) return null
 
+  // Limpieza probabilistica de sesiones expiradas (10% de chances por request)
+  // Evita acumulacion infinita sin necesitar un cron job
+  if (Math.random() < 0.1) {
+    sql`DELETE FROM sessions WHERE expires_at < NOW()`.catch(() => {})
+  }
+
   return result[0] as User
 }
 

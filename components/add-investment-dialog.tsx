@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { addInvestment } from "@/app/actions/investments"
 import { Plus, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
 interface AddInvestmentDialogProps {
   watchlistId: number
@@ -71,6 +72,7 @@ export function AddInvestmentDialog({ watchlistId, exchangeRates, preferredCurre
       setIsOpen(false)
       setShares("")
       setCostPerShare("")
+      toast.success("Inversión agregada correctamente")
     }
   }
 

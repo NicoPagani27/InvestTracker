@@ -1,6 +1,7 @@
 import { getSession } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { sql } from "@/lib/db"
+import type { Watchlist, Trade } from "@/lib/db"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { PortfolioSummary } from "@/components/portfolio-summary"
 import { StaticInvestmentsTable } from "@/components/static-investments-table"
@@ -10,6 +11,7 @@ import { AddInvestmentDialog } from "@/components/add-investment-dialog"
 import { TradeHistory } from "@/components/trade-history"
 import { EmptyPortfolio } from "@/components/empty-portfolio"
 import { PortfolioPieChart } from "@/components/portfolio-pie-chart"
+import { PnlSummary } from "@/components/pnl-summary"
 import { fetchStockQuote, cacheStockPrice, fetchExchangeRates, cacheExchangeRates } from "@/lib/stocks"
 
 async function getWatchlists(userId: string) {
@@ -45,28 +47,46 @@ async function getExchangeRates() {
   return rateMap
 }
 
-async function getTrades(userId: string, limit = 10) {
+async function getTrades(userId: string, page = 1, pageSize = 10) {
+  const offset = (page - 1) * pageSize
   return await sql`
     SELECT * FROM trades 
     WHERE user_id = ${userId} 
     ORDER BY trade_date DESC 
-    LIMIT ${limit}
+    LIMIT ${pageSize} OFFSET ${offset}
   `
 }
 
-async function ensurePricesLoaded(investments: any[]) {
+async function getTradesCount(userId: string) {
+  const result = await sql`SELECT COUNT(*) as count FROM trades WHERE user_id = ${userId}`
+  return Number(result[0].count)
+}
+
+async function getRealizedPnl(userId: string): Promise<number> {
+  const result = await sql`
+    SELECT COALESCE(SUM(realized_pnl), 0) as total
+    FROM trades
+    WHERE user_id = ${userId} AND trade_type = 'SELL' AND realized_pnl IS NOT NULL
+  `
+  return Number(result[0].total)
+}
+
+async function ensurePricesLoaded(investments: any[]): Promise<boolean> {
+  let fetched = false
   for (const inv of investments) {
     if (!inv.current_price) {
       try {
         const quote = await fetchStockQuote(inv.symbol)
         if (quote) {
           await cacheStockPrice(quote)
+          fetched = true
         }
       } catch (e) {
-        console.log(`[v0] Could not fetch price for ${inv.symbol}`)
+        console.error(`Could not fetch price for ${inv.symbol}:`, e)
       }
     }
   }
+  return fetched
 }
 
 async function ensureExchangeRatesLoaded(rates: Record<string, number>) {
@@ -76,7 +96,7 @@ async function ensureExchangeRatesLoaded(rates: Record<string, number>) {
       await cacheExchangeRates("USD", freshRates)
       return freshRates
     } catch (e) {
-      console.log("[v0] Could not fetch exchange rates")
+      console.error("Could not fetch exchange rates:", e)
     }
   }
   return rates
@@ -85,7 +105,7 @@ async function ensureExchangeRatesLoaded(rates: Record<string, number>) {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ watchlist?: string }>
+  searchParams: Promise<{ watchlist?: string; tradesPage?: string }>
 }) {
   const user = await getSession()
   if (!user) {
@@ -94,6 +114,8 @@ export default async function DashboardPage({
 
   const params = await searchParams
   const watchlists = await getWatchlists(user.id)
+  const tradesPage = Math.max(1, Number.parseInt(params.tradesPage || "1"))
+  const tradesPageSize = 10
 
   if (watchlists.length === 0) {
     await sql`
@@ -107,13 +129,20 @@ export default async function DashboardPage({
 
   let investments = await getInvestments(selectedWatchlistId)
   let exchangeRates = await getExchangeRates()
-  const trades = await getTrades(user.id)
+  const [trades, tradesTotal] = await Promise.all([
+    getTrades(user.id, tradesPage, tradesPageSize),
+    getTradesCount(user.id),
+  ])
+  const realizedPnl = await getRealizedPnl(user.id)
 
   exchangeRates = await ensureExchangeRatesLoaded(exchangeRates)
 
   if (investments.length > 0) {
-    await ensurePricesLoaded(investments)
-    investments = await getInvestments(selectedWatchlistId)
+    const priceFetched = await ensurePricesLoaded(investments)
+    // Solo re-consultar si se cargaron nuevos precios en el caché
+    if (priceFetched) {
+      investments = await getInvestments(selectedWatchlistId)
+    }
   }
 
   const baseCurrency = "USD"
@@ -195,7 +224,7 @@ export default async function DashboardPage({
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 items-stretch sm:items-center justify-between">
-          <WatchlistSelector watchlists={watchlists as any[]} selectedId={selectedWatchlistId} />
+          <WatchlistSelector watchlists={watchlists as Watchlist[]} selectedId={selectedWatchlistId} />
           <div className="w-full sm:w-auto">
             {addInvestmentButton}
           </div>
@@ -214,6 +243,13 @@ export default async function DashboardPage({
               currency={baseCurrency}
             />
 
+            <PnlSummary
+              unrealizedPnl={totalGainLoss}
+              unrealizedPnlPercent={totalGainLossPercent}
+              realizedPnl={realizedPnl}
+              totalCostBasis={totalCost}
+            />
+
             <StaticInvestmentsTable investments={portfolioWithWeight} totalCost={totalCost} />
 
             <LiveInvestmentsTable
@@ -226,7 +262,14 @@ export default async function DashboardPage({
 
             <PortfolioPieChart investments={portfolioWithWeight} />
 
-            <TradeHistory trades={trades as any[]} currency={baseCurrency} />
+            <TradeHistory
+              trades={trades as Trade[]}
+              currency={baseCurrency}
+              currentPage={tradesPage}
+              totalTrades={tradesTotal}
+              pageSize={tradesPageSize}
+              watchlistId={selectedWatchlistId}
+            />
           </>
         )}
       </main>

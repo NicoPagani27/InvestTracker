@@ -2,7 +2,8 @@
 
 import { sql } from "@/lib/db"
 import { getSession } from "@/lib/auth"
-import { fetchStockQuote, cacheStockPrice, fetchExchangeRates, cacheExchangeRates } from "@/lib/stocks"
+import { fetchStockQuote, fetchMultipleStocks, cacheStockPrice, fetchExchangeRates, cacheExchangeRates } from "@/lib/stocks"
+import { addInvestmentSchema, sellSchema, updateInvestmentSchema, createWatchlistSchema } from "@/lib/validations"
 import { revalidatePath } from "next/cache"
 
 export async function addInvestment(formData: FormData) {
@@ -11,18 +12,35 @@ export async function addInvestment(formData: FormData) {
     return { error: "No autenticado" }
   }
 
-  const watchlistId = formData.get("watchlistId") as string
-  const symbol = (formData.get("symbol") as string).toUpperCase()
-  const shares = Number.parseFloat(formData.get("shares") as string)
-  const costPerShare = Number.parseFloat(formData.get("costPerShare") as string)
-  const tradeDate = formData.get("tradeDate") as string
-  const exchangeRate = Number.parseFloat(formData.get("exchangeRate") as string) || 1
-  const notes = formData.get("notes") as string
+  const raw = {
+    watchlistId: formData.get("watchlistId") as string,
+    symbol: (formData.get("symbol") as string)?.toUpperCase(),
+    shares: Number.parseFloat(formData.get("shares") as string),
+    costPerShare: Number.parseFloat(formData.get("costPerShare") as string),
+    tradeDate: formData.get("tradeDate") as string,
+    exchangeRate: Number.parseFloat(formData.get("exchangeRate") as string) || 1,
+    notes: formData.get("notes") as string || undefined,
+  }
+
+  const parsed = addInvestmentSchema.safeParse(raw)
+  if (!parsed.success) {
+    return { error: parsed.error.errors[0].message }
+  }
+
+  const { watchlistId, symbol, shares, costPerShare, tradeDate, exchangeRate, notes } = parsed.data
 
   // Fetch stock info
   const quote = await fetchStockQuote(symbol)
   if (!quote) {
     return { error: "Símbolo no encontrado" }
+  }
+
+  // Verify watchlist ownership
+  const watchlist = await sql`
+    SELECT id FROM watchlists WHERE id = ${watchlistId} AND user_id = ${user.id}
+  `
+  if (watchlist.length === 0) {
+    return { error: "Portafolio no encontrado" }
   }
 
   // Cache the stock price
@@ -85,11 +103,20 @@ export async function updateInvestment(formData: FormData) {
     return { error: "No autenticado" }
   }
 
-  const investmentId = Number.parseInt(formData.get("investmentId") as string)
-  const shares = Number.parseFloat(formData.get("shares") as string)
-  const costPerShare = Number.parseFloat(formData.get("costPerShare") as string)
-  const tradeDate = formData.get("tradeDate") as string
-  const exchangeRate = Number.parseFloat(formData.get("exchangeRate") as string) || 1
+  const raw = {
+    investmentId: Number.parseInt(formData.get("investmentId") as string),
+    shares: Number.parseFloat(formData.get("shares") as string),
+    costPerShare: Number.parseFloat(formData.get("costPerShare") as string),
+    tradeDate: formData.get("tradeDate") as string,
+    exchangeRate: Number.parseFloat(formData.get("exchangeRate") as string) || 1,
+  }
+
+  const parsed = updateInvestmentSchema.safeParse(raw)
+  if (!parsed.success) {
+    return { error: parsed.error.errors[0].message }
+  }
+
+  const { investmentId, shares, costPerShare, tradeDate, exchangeRate } = parsed.data
 
   // Verify ownership
   const investment = await sql`
@@ -154,13 +181,9 @@ export async function updatePrices(watchlistId: number) {
 
   const symbols = investments.map((i) => i.symbol as string)
 
-  // Fetch and cache all prices
-  for (const symbol of symbols) {
-    const quote = await fetchStockQuote(symbol)
-    if (quote) {
-      await cacheStockPrice(quote)
-    }
-  }
+  // Fetch all prices in parallel and cache them
+  const quotes = await fetchMultipleStocks(symbols)
+  await Promise.all(Array.from(quotes.values()).map((quote) => cacheStockPrice(quote)))
 
   // Update exchange rates
   const rates = await fetchExchangeRates("USD")
@@ -176,12 +199,17 @@ export async function createWatchlist(formData: FormData) {
     return { error: "No autenticado" }
   }
 
-  const name = formData.get("name") as string
-  const description = formData.get("description") as string
-
-  if (!name) {
-    return { error: "El nombre es requerido" }
+  const raw = {
+    name: formData.get("name") as string,
+    description: formData.get("description") as string || undefined,
   }
+
+  const parsed = createWatchlistSchema.safeParse(raw)
+  if (!parsed.success) {
+    return { error: parsed.error.errors[0].message }
+  }
+
+  const { name, description } = parsed.data
 
   await sql`
     INSERT INTO watchlists (user_id, name, description)
@@ -221,10 +249,20 @@ export async function recordSale(formData: FormData) {
     return { error: "No autenticado" }
   }
 
-  const investmentId = Number.parseInt(formData.get("investmentId") as string)
-  const sharesToSell = Number.parseFloat(formData.get("shares") as string)
-  const pricePerShare = Number.parseFloat(formData.get("pricePerShare") as string)
-  const exchangeRate = Number.parseFloat(formData.get("exchangeRate") as string) || 1
+  const raw = {
+    investmentId: Number.parseInt(formData.get("investmentId") as string),
+    shares: Number.parseFloat(formData.get("shares") as string),
+    pricePerShare: Number.parseFloat(formData.get("pricePerShare") as string),
+    exchangeRate: Number.parseFloat(formData.get("exchangeRate") as string) || 1,
+    tradeDate: formData.get("tradeDate") as string || new Date().toISOString().split("T")[0],
+  }
+
+  const parsed = sellSchema.safeParse(raw)
+  if (!parsed.success) {
+    return { error: parsed.error.errors[0].message }
+  }
+
+  const { investmentId, shares: sharesToSell, pricePerShare, exchangeRate, tradeDate } = parsed.data
 
   // Get investment details
   const investments = await sql`
@@ -244,10 +282,17 @@ export async function recordSale(formData: FormData) {
     return { error: "No tienes suficientes acciones" }
   }
 
+  // Calcular PNL realizado (consistente con la lógica del dashboard)
+  const costBasisPerShare = Number(investment.cost_per_share)
+  const costExchangeRate = Number(investment.exchange_rate_at_purchase)
+  const costPerShareUSD = costBasisPerShare * costExchangeRate
+  const salePerShareUSD = exchangeRate === 1 ? pricePerShare : pricePerShare / exchangeRate
+  const realizedPnl = (salePerShareUSD - costPerShareUSD) * sharesToSell
+
   // Record the sale
   await sql`
-    INSERT INTO trades (user_id, watchlist_id, symbol, name, trade_type, shares, price_per_share, currency, exchange_rate, total_value, trade_date)
-    VALUES (${user.id}, ${investment.watchlist_id}, ${investment.symbol}, ${investment.name}, 'SELL', ${sharesToSell}, ${pricePerShare}, ${investment.currency}, ${exchangeRate}, ${sharesToSell * pricePerShare}, NOW())
+    INSERT INTO trades (user_id, watchlist_id, symbol, name, trade_type, shares, price_per_share, currency, exchange_rate, total_value, trade_date, cost_basis_per_share, realized_pnl)
+    VALUES (${user.id}, ${investment.watchlist_id}, ${investment.symbol}, ${investment.name}, 'SELL', ${sharesToSell}, ${pricePerShare}, ${investment.currency}, ${exchangeRate}, ${sharesToSell * pricePerShare}, ${tradeDate}, ${costBasisPerShare}, ${realizedPnl})
   `
 
   // Update or delete investment

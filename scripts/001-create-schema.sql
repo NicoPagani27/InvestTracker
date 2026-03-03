@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
   name TEXT,
+  password_hash TEXT,
   preferred_currency TEXT DEFAULT 'USD',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -50,6 +51,9 @@ CREATE TABLE IF NOT EXISTS trades (
   exchange_rate DECIMAL(18, 6) DEFAULT 1,
   total_value DECIMAL(18, 4) NOT NULL,
   trade_date TIMESTAMP WITH TIME ZONE NOT NULL,
+  -- PNL (solo para trades de tipo SELL)
+  cost_basis_per_share DECIMAL(18, 4),
+  realized_pnl DECIMAL(18, 4),
   notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -92,3 +96,12 @@ CREATE INDEX IF NOT EXISTS idx_trades_symbol ON trades(symbol);
 CREATE INDEX IF NOT EXISTS idx_watchlists_user ON watchlists(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
+
+-- Rate limiting table (para proteger endpoints de auth)
+CREATE TABLE IF NOT EXISTS rate_limits (
+  key TEXT NOT NULL PRIMARY KEY,
+  attempts INTEGER DEFAULT 1,
+  window_start TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_rate_limits_window ON rate_limits(window_start);

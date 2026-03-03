@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label"
 import { recordSale } from "@/app/actions/investments"
 import { Loader2 } from "lucide-react"
 import { formatNumber } from "@/lib/utils"
+import { toast } from "sonner"
 
 interface SellDialogProps {
   investment: {
@@ -35,6 +36,7 @@ export function SellDialog({ investment, exchangeRates, preferredCurrency, onClo
   const [error, setError] = useState<string | null>(null)
   const [sharesToSell, setSharesToSell] = useState(investment.shares.toString())
   const [pricePerShare, setPricePerShare] = useState(investment.currentPrice.toString())
+  const [tradeDate, setTradeDate] = useState(new Date().toISOString().split("T")[0])
 
   const exchangeRate = exchangeRates[investment.currency] || 1
 
@@ -46,6 +48,7 @@ export function SellDialog({ investment, exchangeRates, preferredCurrency, onClo
     formData.set("shares", sharesToSell)
     formData.set("pricePerShare", pricePerShare)
     formData.set("exchangeRate", String(exchangeRate))
+    formData.set("tradeDate", tradeDate)
 
     const result = await recordSale(formData)
 
@@ -54,6 +57,7 @@ export function SellDialog({ investment, exchangeRates, preferredCurrency, onClo
       setIsLoading(false)
     } else {
       setIsLoading(false)
+      toast.success("Venta registrada correctamente")
       onClose()
     }
   }
@@ -73,6 +77,17 @@ export function SellDialog({ investment, exchangeRates, preferredCurrency, onClo
           {error && (
             <div className="p-3 text-sm text-red-500 bg-red-500/10 rounded-md border border-red-500/20">{error}</div>
           )}
+
+          <div className="space-y-2">
+            <Label htmlFor="tradeDate">Fecha de Venta</Label>
+            <Input
+              id="tradeDate"
+              type="date"
+              value={tradeDate}
+              onChange={(e) => setTradeDate(e.target.value)}
+              required
+            />
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

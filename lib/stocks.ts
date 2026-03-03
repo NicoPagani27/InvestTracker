@@ -105,19 +105,17 @@ export async function fetchStockQuote(symbol: string): Promise<StockQuote | null
   }
 }
 
-// Fetch multiple stock data from Yahoo Finance via API route
+// Fetch multiple stock data en paralelo
 export async function fetchMultipleStocks(symbols: string[]): Promise<Map<string, StockQuote>> {
   const quotes = new Map<string, StockQuote>()
 
-  // Fetch sequentially with delay to avoid rate limiting
-  for (const symbol of symbols) {
-    const quote = await fetchStockQuote(symbol)
-    if (quote) {
-      quotes.set(symbol, quote)
-    }
-    // Add small delay between requests
-    await new Promise((resolve) => setTimeout(resolve, 200))
-  }
+  const results = await Promise.all(
+    symbols.map((symbol) => fetchStockQuote(symbol).catch(() => null))
+  )
+
+  results.forEach((quote, i) => {
+    if (quote) quotes.set(symbols[i], quote)
+  })
 
   return quotes
 }
@@ -221,18 +219,20 @@ export async function fetchExchangeRates(baseCurrency = "USD"): Promise<Exchange
   }
 }
 
-// Cache exchange rates
+// Cache exchange rates en paralelo (un upsert por moneda)
 export async function cacheExchangeRates(baseCurrency: string, rates: ExchangeRates): Promise<void> {
   try {
-    for (const [toCurrency, rate] of Object.entries(rates)) {
-      await sql`
-        INSERT INTO exchange_rate_cache (from_currency, to_currency, rate, updated_at)
-        VALUES (${baseCurrency}, ${toCurrency}, ${rate}, NOW())
-        ON CONFLICT (from_currency, to_currency) DO UPDATE SET
-          rate = EXCLUDED.rate,
-          updated_at = NOW()
-      `
-    }
+    await Promise.all(
+      Object.entries(rates).map(([toCurrency, rate]) =>
+        sql`
+          INSERT INTO exchange_rate_cache (from_currency, to_currency, rate, updated_at)
+          VALUES (${baseCurrency}, ${toCurrency}, ${rate}, NOW())
+          ON CONFLICT (from_currency, to_currency) DO UPDATE SET
+            rate = EXCLUDED.rate,
+            updated_at = NOW()
+        `
+      )
+    )
   } catch (error) {
     console.error("Error caching exchange rates:", error)
   }

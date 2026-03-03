@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Button } from "@/components/ui/button"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { deleteInvestment } from "@/app/actions/investments"
-import { toast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { formatNumber, formatDate } from "@/lib/utils"
 import { Trash2 } from "lucide-react"
 
@@ -34,16 +34,9 @@ export function StaticInvestmentsTable({ investments, totalCost }: StaticInvestm
     const result = await deleteInvestment(id)
     
     if (result.error) {
-      toast({
-        title: "Error",
-        description: result.error,
-        variant: "destructive",
-      })
+      toast.error(result.error)
     } else {
-      toast({
-        title: "Éxito",
-        description: "Inversión eliminada correctamente",
-      })
+      toast.success("Inversión eliminada correctamente")
     }
     
     setDeletingId(null)
