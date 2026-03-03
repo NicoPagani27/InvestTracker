@@ -30,7 +30,7 @@ export function formatNumber(value: number, decimals = 2): string {
   }).format(value)
 }
 
-export function formatDateTime(dateString: string): string {
+export function formatDateTime(dateString: Date | string): string {
   return new Intl.DateTimeFormat("es-ES", {
     year: "numeric",
     month: "short",

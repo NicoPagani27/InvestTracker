@@ -15,7 +15,7 @@ interface Trade {
   currency: string
   exchange_rate: number
   total_value: number
-  trade_date: string
+  trade_date: Date | string
 }
 
 interface TradeHistoryProps {
